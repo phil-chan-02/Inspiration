@@ -13,13 +13,12 @@ from UM.Logger import Logger #Adding messages to the log.
 from UM.PluginRegistry import PluginRegistry #Getting the location of Hello.qml.
 
 from . import ApiHandler
-from . import ProgressBar
 import requests
 import json
 import time
 import threading
 
-class ExampleExtension(Extension, QObject): 
+class Inspiration(Extension, QObject): 
     def __init__(self):
         Extension.__init__(self)
         QObject.__init__(self)
@@ -47,22 +46,20 @@ class ExampleExtension(Extension, QObject):
 
         return component
     
+    # 将Api生成的图片下载到本地
     def downloadImage(self, url):
         dir_path = os.path.join(os.path.dirname(__file__), "images", self._submitData["prompt"] + ".jpg")
         con = requests.get(url)
         with open(dir_path, "wb") as f:
             f.write(con.content)
     
-    @pyqtSlot(str)
-    def output(self, string):
-        print(string)
-
+    
     @pyqtProperty(str)
     def getQtCurrentDir(self):
         path = QDir.fromNativeSeparators(os.path.dirname(__file__))
         return path
 
-
+    # 该信号主要用于更新box中的图片列表
     imagesListChanged = pyqtSignal()
 
     def setImagesList(self):
@@ -80,7 +77,7 @@ class ExampleExtension(Extension, QObject):
     imagesList = pyqtProperty(list, fget=getImagesList, notify=imagesListChanged)
 
     
-
+    # 该信号用于更新当前显示的图片
     currentImageChanged = pyqtSignal()
 
     @pyqtSlot(str)
@@ -95,6 +92,7 @@ class ExampleExtension(Extension, QObject):
 
 
 
+    # 该信号用来控制图片的删除
     currentImageDeleted = pyqtSignal()
 
     @pyqtSlot()
@@ -112,87 +110,35 @@ class ExampleExtension(Extension, QObject):
     
     @pyqtSlot()
     def popDeleteBox(self):
+        imageId = self.getCurrentImageId()
+        if imageId == "": return 
         reply = QMessageBox.question(None, "提示", "确定要删除吗？", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply ==QMessageBox.StandardButton.Yes:
             self.removeImage()
 
 
-    
-    # @pyqtSlot()
-    # def submitRequest(self):
-    #     accessToken = self.getAccessToken()
-    #     url = "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/txt2imgv2?access_token=" + accessToken
-
-    #     self._submitData["version"] = "v2"
-    #     payload = json.dumps(self._submitData)
-    #     headers = {
-    #         'Content-Type': 'application/json',
-    #         'Accept': 'application/json'
-    #     }
-        
-    #     response = requests.request("POST", url, headers=headers, data=payload)
-    #     print(response.text)
-    #     return response
-
-    # @pyqtSlot()
-    # def getAccessToken(self):
-    #     API_KEY = "W59kHvqE8ftttrkxoiladkKj"
-    #     SECRET_KEY = "xdQ4GDP20HDY77ZpL0VZTqVWtckhv7uC"
-    #     url = "https://aip.baidubce.com/oauth/2.0/token"
-    #     params = {"grant_type": "client_credentials", "client_id": API_KEY, "client_secret": SECRET_KEY}
-    #     return str(requests.post(url, params=params).json().get("access_token"))
-    
-
-    # @pyqtSlot()
-    # def searchResult(self):
-    #     accessToken = self.getAccessToken()
-    #     url = "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/getImgv2?access_token=" + accessToken
-    
-    #     submitResponse = self.submitRequest()
-
-    #     task_id = json.loads(submitResponse.text)["data"]["primary_task_id"]
-
-    #     payload = json.dumps({
-    #         "task_id": task_id
-    #     })
-    #     headers = {
-    #         'Content-Type': 'application/json',
-    #         'Accept': 'application/json'
-    #     }
-        
-    #     time.sleep(20)
-    #     response = requests.request("POST", url, headers=headers, data=payload)
-    #     imageUrl = json.loads(response.text)["data"]['sub_task_result_list'][0]['final_image_list'][0]['img_url']
-    #     self.downloadImage(imageUrl)
-    #     self.clearImagesList()
-    #     self.setImagesList()
-    #     print(response.text)
-
-
+    # 获取用户在控制台输入的数据并保存
     @pyqtSlot(str, str)
     def setSubmitData(self, key, value):
         if value != "":
             if key == "Width" or key == "Height":
                 value = int(value)
             self._submitData[key.lower()] = value
-        print(self._submitData)
 
+    # 通过ApiHandler获取图片
     @pyqtSlot()
     def getImageViaApi(self):
 
         myHandler = ApiHandler.ApiHandler(self._submitData)
-        myHandler.start()
-        myHandler.join()
-        imageUrl = myHandler.getRes()
-        self.downloadImage(imageUrl)
-        self.clearImagesList()
-        self.setImagesList()
-        print(imageUrl)
-
-    # @pyqtSlot(str)
-    # def readImage(path):
-    #     img = Image.open(path)
-    #     return img
+        if myHandler.checkValidation() == False:
+            reply = QMessageBox.warning(None, "警告", "请求图片格式有误", QMessageBox.StandardButton.Cancel)
+        else:
+            myHandler.start()
+            myHandler.join()
+            imageUrl = myHandler.getRes()
+            self.downloadImage(imageUrl)
+            self.clearImagesList()
+            self.setImagesList()
 
     
 

@@ -1,6 +1,6 @@
 {
-    "name": "Example Extension",
-    "author": "Ultimaker",
+    "name": "Inspiration",
+    "author": "PhilChan",
     "version": "1.0",
     "api": 6,
     "supported_sdk_versions": [
@@ -8,6 +8,6 @@
         "7.0.0",
         "8.0.0"
     ],
-    "description": "Example extension to instruct people on how to create Uranium extensions.",
+    "description": "Get image inspiration via Baidu api",
     "catalog": "cura"
 }

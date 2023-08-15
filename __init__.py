@@ -1,7 +1,7 @@
 # Copyright (c) 2017 Ultimaker B.V.
 # This example is released under the terms of the AGPLv3 or higher.
 
-from . import ExampleExtension
+from . import Inspiration
 
 ##  Defines additional metadata for the plug-in.
 #
@@ -20,4 +20,4 @@ def getMetaData():
 #
 #   \param app The application that the plug-in needs to register with.
 def register(app):
-    return {"extension": ExampleExtension.ExampleExtension()}
+    return {"extension": Inspiration.Inspiration()}

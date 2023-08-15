@@ -124,7 +124,7 @@ Window{
 
             Text{
                 id: console_text
-                text: "支持的宽度×高度：512x512、640x360、360x640、1024x1024、1280x720、720x1280，千万不要输错，会报错"
+                text: "格式要求：\n1.图片描述仅支持中文\n2.支持的宽度×高度：512x512、640x360、360x640、1024x1024、1280x720、720x1280"
                 clip: true
                 width: console_grid.width
                 wrapMode: Text.WrapAnywhere

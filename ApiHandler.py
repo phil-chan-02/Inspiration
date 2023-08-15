@@ -10,8 +10,9 @@ class ApiHandler(threading.Thread):
         self._submitData = submitData
         self._accessToken = ""
 
-    # thread在创建后会运行run函数
+    # thread在start后会运行run函数
     def run(self):
+        self.getApiConfiguration()
         self.getAccessToken()
         submitRes = self.submitRequest()
         searchRes = self.searchResult(submitRes)
@@ -22,12 +23,19 @@ class ApiHandler(threading.Thread):
             return self._result
         except Exception:
             return None
+        
+    # 从json文件中读取用户key等信息
+    def getApiConfiguration(self):
+        file_path = os.path.join(os.path.dirname(__file__), "ApiConfiguration.json")
+        with open(file_path, "r") as file:
+            data = json.load(file)
+            self._apiConfiguration = data
 
     # 返回用户AccessToken
     def getAccessToken(self):
-        API_KEY = "W59kHvqE8ftttrkxoiladkKj"
-        SECRET_KEY = "xdQ4GDP20HDY77ZpL0VZTqVWtckhv7uC"
-        url = "https://aip.baidubce.com/oauth/2.0/token"
+        API_KEY = self._apiConfiguration["api_key"]
+        SECRET_KEY = self._apiConfiguration["secret_key"]
+        url = self._apiConfiguration["access_token_url"]
         params = {
             "grant_type": "client_credentials", 
             "client_id": API_KEY, 
@@ -40,7 +48,7 @@ class ApiHandler(threading.Thread):
     def submitRequest(self):
 
         accessToken = self._accessToken
-        url = "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/txt2imgv2?access_token=" + accessToken
+        url = self._apiConfiguration["submit_request_url"] + accessToken
 
         self._submitData["version"] = "v2"
         payload = json.dumps(self._submitData)
@@ -51,7 +59,6 @@ class ApiHandler(threading.Thread):
         }
         
         response = requests.request("POST", url, headers=headers, data=payload)
-        print(response.text)
         return response
 
 
@@ -59,7 +66,7 @@ class ApiHandler(threading.Thread):
     def searchResult(self, res):
 
         accessToken = self._accessToken
-        url = "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/getImgv2?access_token=" + accessToken
+        url = self._apiConfiguration["search_result_url"] + accessToken
     
         task_id = json.loads(res.text)["data"]["primary_task_id"]
 
@@ -75,13 +82,27 @@ class ApiHandler(threading.Thread):
         time.sleep(20)
         response = requests.request("POST", url, headers=headers, data=payload)
         imageUrl = json.loads(response.text)["data"]['sub_task_result_list'][0]['final_image_list'][0]['img_url']
-        print(response.text)
         return imageUrl
 
+    # 检查提交数据的合法性
+    def checkValidation(self):
+        try:
+            prompt = self._submitData["prompt"]
+            width = self._submitData["width"]
+            height = self._submitData["height"]
+        except KeyError:
+            return False
+        ret1 = self.is_all_chinese(prompt)
+        resolution = (width, height)
+        resoList = [(512, 512), (640, 360), (360, 640), (1024, 1024), (1280, 720), (720, 1280)]
+        if resolution in resoList and ret1:
+            return True
+        else: 
+            return False
 
-    # def setSubmitData(self, key, value):
-    #     if value != "":
-    #         if key == "Width" or key == "Height":
-    #             value = int(value)
-    #         self._submitData[key.lower()] = value
-    #     print(self._submitData)
+    def is_all_chinese(self, strs):
+        for _char in strs:
+            if not '\u4e00' <= _char <= '\u9fa5':
+                return False
+        return True
+

@@ -1,0 +1,7 @@
+{
+    "api_key": "W59kHvqE8ftttrkxoiladkKj",
+    "secret_key": "xdQ4GDP20HDY77ZpL0VZTqVWtckhv7uC",
+    "access_token_url": "https://aip.baidubce.com/oauth/2.0/token",
+    "submit_request_url": "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/txt2imgv2?access_token=",
+    "search_result_url": "https://aip.baidubce.com/rpc/2.0/ernievilg/v1/getImgv2?access_token="
+}
